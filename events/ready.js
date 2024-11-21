@@ -20,6 +20,13 @@ module.exports = {
     },
 };
 
+/**
+ * Announces a list of movies for voting on a specified channel.
+ *
+ * @param {Object} channel - The communication channel to send the voting message to.
+ * @param {Object} db - The database connection to retrieve movie suggestions.
+ * @return {Promise<void>} A promise that resolves once the voting message is sent successfully and reactions are added.
+ */
 async function announceMoviesForVoting(channel, db) {
     return new Promise((resolve, reject) => {
         db.all('SELECT movie FROM movie_suggestions', [], (err, rows) => {
@@ -50,6 +57,13 @@ async function announceMoviesForVoting(channel, db) {
     });
 }
 
+/**
+ * Selects a specified number of random movies from a given list.
+ *
+ * @param {Array} movies - The array containing movie objects.
+ * @param {number} num - The number of random movies to select.
+ * @return {Array} An array containing the selected random movies.
+ */
 function getRandomMovies(movies, num) {
     const shuffled = movies.sort(() => 0.5 - Math.random());
     return shuffled.slice(0, num);

@@ -210,3 +210,4 @@ dist
 .pnp.*
 
 /package-lock.json
+!/botDatabase.db
