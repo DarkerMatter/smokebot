@@ -18,8 +18,10 @@ module.exports = {
             return interaction.reply({ embeds: [embed], ephemeral: true });
         }
 
+        // Define the exclude date as one week ago from today
         const excludeDate = format(subWeeks(new Date(), 1), 'yyyy-MM-dd');
 
+        // Query database for movie suggestions that haven't won in the past week or haven't won at all
         db.all('SELECT movie FROM movie_suggestions WHERE won = 0 AND (date_won IS NULL OR date_won < ?)', [excludeDate], async (err, rows) => {
             if (err) {
                 console.error(err.message);
@@ -42,7 +44,11 @@ module.exports = {
                 return interaction.reply({ embeds: [embed], ephemeral: true });
             }
 
-            const movies = rows.map((row, index) => `${index + 1}. ${row.movie}`).join('\n');
+            // Shuffle the array of movies and select the first 3
+            const shuffledMovies = rows.sort(() => 0.5 - Math.random());
+            const selectedMovies = shuffledMovies.slice(0, 3);
+
+            const movies = selectedMovies.map((movie, index) => `${index + 1}. ${movie.movie}`).join('\n');
 
             const embed = new EmbedBuilder()
                 .setColor(0xFFFFFF)
@@ -52,7 +58,7 @@ module.exports = {
 
             const voteMessage = await interaction.channel.send({ embeds: [embed] });
 
-            for (let i = 1; i <= rows.length; i++) {
+            for (let i = 1; i <= selectedMovies.length; i++) {
                 voteMessage.react(`${i}\uFE0F\u20E3`);
             }
 
