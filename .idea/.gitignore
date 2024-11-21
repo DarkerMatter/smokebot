@@ -1,0 +1,11 @@
+# Default ignored files
+/shelf/
+/workspace.xml
+# Editor-based HTTP Client requests
+/httpRequests/
+/git_toolbox_blame.xml
+/misc.xml
+/jsLibraryMappings.xml
+/modules.xml
+/smokebot.iml
+/vcs.xml
