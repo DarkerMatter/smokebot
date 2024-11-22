@@ -211,3 +211,4 @@ dist
 
 /package-lock.json
 !/botDatabase.db
+/botDatabase.db

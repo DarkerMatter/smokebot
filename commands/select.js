@@ -1,5 +1,5 @@
 const { EmbedBuilder } = require('discord.js');
-const { format, subWeeks } = require('date-fns');
+const { format } = require('date-fns');
 
 module.exports = {
     data: {
@@ -94,7 +94,7 @@ async function selectWinner(db, interaction, channel) {
 
     const winningMovieIndex = parseInt(winnerEmoji.charAt(0)) - 1;
     const splitMessage = voteMessage.embeds[0].description.split('\n');
-    const winningMovie = splitMessage[winningMovieIndex].split('. ')[1];
+    const winningMovie = splitMessage[winningMovieIndex].split('. ')[1].split(' (')[0];
 
     const currentDate = new Date();
     const dateWon = format(currentDate, 'yyyy-MM-dd');
@@ -124,58 +124,60 @@ async function selectWinner(db, interaction, channel) {
 }
 
 async function selectRandomMovie(db, interaction, channel) {
-    const lastWeekDate = format(subWeeks(new Date(), 1), 'yyyy-MM-dd');
+    // Fetch up-to-date messages and find the voting message
+    const messages = await interaction.channel.messages.fetch({ limit: 50 });
+    const voteMessage = messages.find(msg => msg.embeds.length && msg.embeds[0].title === "Vote for Tomorrow's Movie");
 
-    db.all('SELECT movie FROM movie_suggestions WHERE won = 0 AND (date_won IS NULL OR date_won < ?)', [lastWeekDate], (err, rows) => {
+    if (!voteMessage) {
+        const embed = new EmbedBuilder()
+            .setColor(0xFFFFFF)
+            .setTitle('Voting Message Not Found')
+            .setDescription('No voting message found.')
+            .setFooter({ text: 'Hot Rock Make Boat Go' });
+
+        interaction.editReply({ embeds: [embed] });
+        return;
+    }
+
+    const splitMessage = voteMessage.embeds[0].description.split('\n');
+    const moviesForVoting = splitMessage.map(line => line.split('. ')[1].split(' (')[0]);
+
+    if (moviesForVoting.length === 0) {
+        const embed = new EmbedBuilder()
+            .setColor(0xFFFFFF)
+            .setTitle('No Movies for Voting')
+            .setDescription('No movies available for random selection.')
+            .setFooter({ text: 'Hot Rock Make Boat Go' });
+
+        interaction.editReply({ embeds: [embed] });
+        return;
+    }
+
+    const randomMovie = moviesForVoting[Math.floor(Math.random() * moviesForVoting.length)];
+
+    const currentDate = new Date();
+    const dateWon = format(currentDate, 'yyyy-MM-dd');
+
+    db.run('UPDATE movie_suggestions SET won = 1, date_won = ? WHERE movie = ?', [dateWon, randomMovie], function (err) {
         if (err) {
             console.error(err.message);
-            const embed = new EmbedBuilder()
+            const embedFailure = new EmbedBuilder()
                 .setColor(0xFFFFFF)
-                .setTitle('Failed to Fetch Suggestions')
-                .setDescription('Failed to fetch movie suggestions.')
+                .setTitle('Failed to Update Winner')
+                .setDescription('Failed to update the winner.')
                 .setFooter({ text: 'Hot Rock Make Boat Go' });
 
-            interaction.editReply({ embeds: [embed] });
+            interaction.editReply({ embeds: [embedFailure] });
             return;
         }
 
-        if (rows.length === 0) {
-            const embed = new EmbedBuilder()
-                .setColor(0xFFFFFF)
-                .setTitle('No Suggestions Available')
-                .setDescription('No movie suggestions available.')
-                .setFooter({ text: 'Hot Rock Make Boat Go' });
+        const embedSuccess = new EmbedBuilder()
+            .setColor(0xFFFFFF)
+            .setTitle('Random Movie Selected')
+            .setDescription(`The randomly selected movie is:\n\n**${randomMovie}**`)
+            .setFooter({ text: 'Hot Rock Make Boat Go' });
 
-            interaction.editReply({ embeds: [embed] });
-            return;
-        }
-
-        const randomMovie = rows[Math.floor(Math.random() * rows.length)].movie;
-
-        const currentDate = new Date();
-        const dateWon = format(currentDate, 'yyyy-MM-dd');
-
-        db.run('UPDATE movie_suggestions SET won = 1, date_won = ? WHERE movie = ?', [dateWon, randomMovie], function (err) {
-            if (err) {
-                console.error(err.message);
-                const embedFailure = new EmbedBuilder()
-                    .setColor(0xFFFFFF)
-                    .setTitle('Failed to Update Winner')
-                    .setDescription('Failed to update the winner.')
-                    .setFooter({ text: 'Hot Rock Make Boat Go' });
-
-                interaction.editReply({ embeds: [embedFailure] });
-                return;
-            }
-
-            const embedSuccess = new EmbedBuilder()
-                .setColor(0xFFFFFF)
-                .setTitle('Random Movie Selected')
-                .setDescription(`The randomly selected movie is:\n\n**${randomMovie}**`)
-                .setFooter({ text: 'Hot Rock Make Boat Go' });
-
-            channel.send({ embeds: [embedSuccess] });
-            interaction.editReply({ embeds: [embedSuccess] });
-        });
+        channel.send({ embeds: [embedSuccess] });
+        interaction.editReply({ embeds: [embedSuccess] });
     });
 }

@@ -1,3 +1,4 @@
+// imports
 const { EmbedBuilder } = require('discord.js');
 const { format, subWeeks } = require('date-fns');
 
@@ -22,7 +23,7 @@ module.exports = {
         const excludeDate = format(subWeeks(new Date(), 1), 'yyyy-MM-dd');
 
         // Query database for movie suggestions that haven't won in the past week or haven't won at all
-        db.all('SELECT movie FROM movie_suggestions WHERE won = 0 AND (date_won IS NULL OR date_won < ?)', [excludeDate], async (err, rows) => {
+        db.all('SELECT movie, suggestions FROM movie_suggestions WHERE won = 0 AND (date_won IS NULL OR date_won < ?)', [excludeDate], async (err, rows) => {
             if (err) {
                 console.error(err.message);
                 const embed = new EmbedBuilder()
@@ -48,7 +49,7 @@ module.exports = {
             const shuffledMovies = rows.sort(() => 0.5 - Math.random());
             const selectedMovies = shuffledMovies.slice(0, 3);
 
-            const movies = selectedMovies.map((movie, index) => `${index + 1}. ${movie.movie}`).join('\n');
+            const movies = selectedMovies.map((movie, index) => `${index + 1}. ${movie.movie} (${movie.suggestions} suggestions)`).join('\n');
 
             const embed = new EmbedBuilder()
                 .setColor(0xFFFFFF)

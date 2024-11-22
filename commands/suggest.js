@@ -56,7 +56,7 @@ module.exports = {
                 });
             } else {
                 // Insert new entry
-                db.run('INSERT INTO movie_suggestions (movie, won, suggestions) VALUES (?, ?, ?)', [movieSuggestion, false, 1], function (err) {
+                db.run('INSERT INTO movie_suggestions (movie, suggestions, won) VALUES (?, ?, ?)', [movieSuggestion, 1, 0], function (err) {
                     if (err) {
                         console.error(err.message);
 

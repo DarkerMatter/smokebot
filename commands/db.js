@@ -27,7 +27,7 @@ module.exports = {
     async execute(interaction, db) {
         await interaction.deferReply({ ephemeral: true });
 
-        if (!interaction.memberPermissions.has('ADMINISTRATOR')) {
+        if (!interaction.member.permissions.has('ADMINISTRATOR')) {
             const embed = new EmbedBuilder()
                 .setColor(0xFFFFFF)
                 .setTitle('Permission Denied')
@@ -88,7 +88,7 @@ async function listMovies(interaction, db) {
             return;
         }
 
-        const formattedRows = rows.map(row => `Movie: ${row.movie}, Suggested by: ${row.suggestions}, Date Won: ${row.date_won || 'N/A'}`).join('\n');
+        const formattedRows = rows.map(row => `Movie: ${row.movie}, Suggestions: ${row.suggestions}, Date Won: ${row.date_won || 'N/A'}`).join('\n');
 
         const embed = new EmbedBuilder()
             .setColor(0xFFFFFF)
@@ -101,7 +101,7 @@ async function listMovies(interaction, db) {
 }
 
 async function deleteMovies(interaction, db) {
-    db.run('DELETE FROM movie_suggestions;', [], function(err) {
+    db.run('DELETE FROM movie_suggestions;', function (err) {
         if (err) {
             console.error(err.message);
 
@@ -155,7 +155,7 @@ async function executeManualQuery(interaction, db, query) {
                     return;
                 }
 
-                const formattedRows = rows.map(row => JSON.stringify(row)).join('\n');
+                const formattedRows = rows.map(row => JSON.stringify(row, null, 2)).join('\n');
 
                 const embed = new EmbedBuilder()
                     .setColor(0xFFFFFF)
